@@ -1,0 +1,70 @@
+@import url(fonts/neuton.css);
+@import url(fonts/venus-rising.css);
+
+body, input, button, select {
+	font-family: NeutonRegular;
+	font-size: 12pt;
+}
+
+html {
+	height: 100%;
+}
+
+body {
+	margin: 0;
+	height: 100%;	
+	overflow: hidden;
+	background: #ffffff; /* Old browsers */
+	background: -moz-linear-gradient(top, #ffffff 0%, #d3d3af 100%); /* FF3.6+ */
+	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#ffffff), color-stop(100%,#d3d3af)); /* Chrome,Safari4+ */
+	background: -webkit-linear-gradient(top, #ffffff 0%,#d3d3af 100%); /* Chrome10+,Safari5.1+ */
+	background: -o-linear-gradient(top, #ffffff 0%,#d3d3af 100%); /* Opera 11.10+ */
+	background: -ms-linear-gradient(top, #ffffff 0%,#d3d3af 100%); /* IE10+ */
+	background: linear-gradient(top, #ffffff 0%,#d3d3af 100%); /* W3C */
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#d3d3af',GradientType=0 ); /* IE6-9 */
+}
+
+h1 {
+  font-size: 40px;
+  font-weight: normal;
+  font-family: VenusRisingRegular;
+  text-align: center;
+  margin-top: 2px;
+  margin-bottom: 10px;
+}
+
+table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+thead tr {
+	border-bottom: 2px black solid;
+}
+
+th {
+	text-align: left;
+}
+
+tr.odd {
+	background-color: #eee;
+}
+
+tr.even {
+	background-color: #ccc;
+}
+
+select, input[type=text] {
+	border: 0;
+	background: rgba(0, 0, 0, 0.2);
+	padding: 2px;
+}
+
+select:focus, input[type=text]:focus {
+	background: rgba(255, 128, 0, 0.2);
+}
+
+select {
+	-webkit-appearance: menulist-textfield;
+	border-radius: 0;
+}

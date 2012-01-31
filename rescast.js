@@ -1,4 +1,4 @@
-var traits = {
+var TRAITS = {
 	'A': 'Ambitious',
 	'B': 'Callous',
 	'C': 'Cautious',
@@ -7,212 +7,119 @@ var traits = {
 	'F': 'Vigilant'
 };
 
-var jobs = {
+var JOBS = {
 	'G': 'Security',
 	'H': 'Politician',
 	'I': 'Scientist'
 };
 
-function characterConstraints(code) {
-	var constraints = {
-		traits: [],
-		job: null
-	};
+function CastingConstraints(code) {
+	this.traits = [];
+	this.job = null;
 	
 	for (var i=0; i<code.length; i++) {
 		var char = code[i];
-		if (jobs[char]) {
-			constraints.job = char;
-		} else if (traits[char]) {
-			constraints.traits.push(char);
+		if (JOBS[char]) {
+			this.job = char;
+		} else if (TRAITS[char]) {
+			this.traits.push(char);
+		}
+	}
+}
+
+CastingConstraints.prototype.code = function() {
+	var code = this.job;
+	if (this.traits[0] < this.traits[1]) {
+		code += this.traits[0] + this.traits[1];
+	} else {
+		code += this.traits[1] + this.traits[0];
+	}
+	return code;
+}
+
+CastingConstraints.prototype.matches = function(selections) {
+	if (this.job != selections.job) {
+		return false;
+	}
+	
+	for (characterTraitIndex in this.traits) {
+		var characterTrait = this.traits[characterTraitIndex];
+		
+		var traitSelected = false;
+		for (selectedTraitIndex in selections.traits) {
+			var selectedTrait = selections.traits[selectedTraitIndex];
+			if (characterTrait == selectedTrait) {
+				traitSelected = true;
+				break;
+			}
+		}
+		
+		if (!traitSelected) {
+			return false;
 		}
 	}
 	
-	return constraints;
+	return true;
 }
 
-var characters = [
-  {
-    name: 'General Rosen',
-    constraints: characterConstraints('GAB')
-  },
-  {
-    name: 'Commander Garrity',
-    constraints: characterConstraints('GDF')
-  },
-  {
-    name: 'Dr. Solan',
-    constraints: characterConstraints('IAB')
-  },
-  {
-    name: 'President Carroll',
-    constraints: characterConstraints('HAC')
-  },
-  {
-    name: 'Secretary Highmore',
-    constraints: characterConstraints('HBF')
-  },
-  {
-    name: 'Dr. White',
-    constraints: characterConstraints('IBE')
-  },
-  {
-    name: 'Undersecretary Bourne',
-    constraints: characterConstraints('HCE')
-  },
-  {
-    name: 'Dr. Yu',
-    constraints: characterConstraints('IAD')
-  },
-  {
-    name: 'Agent Bale',
-    constraints: characterConstraints('GCF')
-  },
-  {
-    name: 'Secretary Stevenson',
-    constraints: characterConstraints('HEF')
-  },
-  {
-    name: 'Vice President Richardson',
-    constraints: characterConstraints('HAD')
-  },
-  {
-    name: 'Rev. LaMont',
-    constraints: characterConstraints('HBD')
-  },
-  {
-    name: 'Dr. Raines',
-    constraints: characterConstraints('IBC')
-  },
-  {
-    name: 'Dr. Calo',
-    constraints: characterConstraints('ICD')
-  },
-  {
-    name: 'Major Hughes',
-    constraints: characterConstraints('GCE')
-  },
-  {
-    name: 'Attache Byrne',
-    constraints: characterConstraints('GAC')
-  },
-  {
-    name: 'General Markoff',
-    constraints: characterConstraints('GAE')
-  },
-  {
-    name: 'Corporal Breckinridge',
-    constraints: characterConstraints('GDE')
-  },
-  {
-    name: 'Representative Harlan',
-    constraints: characterConstraints('HDE')
-  },
-  {
-    name: 'Senator Shields',
-    constraints: characterConstraints('HAF')
-  },
-  {
-    name: 'Deputy Thatcher',
-    constraints: characterConstraints('HBC')
-  },
-  {
-    name: 'Colonel Rothenberg',
-    constraints: characterConstraints('GCD')
-  },
-  {
-    name: 'Advisor Cahill',
-    constraints: characterConstraints('GAF')
-  },
-  {
-    name: 'Dr. Langdon',
-    constraints: characterConstraints('IDE')
-  },
-  {
-    name: 'Dr. Roma',
-    constraints: characterConstraints('ICE')
-  },
-  {
-    name: 'Dr. Hefetz',
-    constraints: characterConstraints('IDF')
-  },
-  {
-    name: 'Assistant Carlisle',
-    constraints: characterConstraints('IAC')
-  },
-  {
-    name: 'Dr. Elder',
-    constraints: characterConstraints('IBD')
-  },
-  {
-    name: 'Major Roderick',
-    constraints: characterConstraints('GAD')
-  },
-  {
-    name: 'Chief Obanhein',
-    constraints: characterConstraints('GBD')
-  },
-  {
-    name: 'Secretary Stern',
-    constraints: characterConstraints('HAB')
-  },
-  {
-    name: 'Secretary Gutierrez',
-    constraints: characterConstraints('HDF')
-  },
-  {
-    name: 'Manager Edwards',
-    constraints: characterConstraints('IBF')
-  },
-  {
-    name: 'Director Mercer',
-    constraints: characterConstraints('HCF')
-  },
-  {
-    name: 'Special Agent Pelletier',
-    constraints: characterConstraints('GBF')
-  },
-  {
-    name: 'Special Agent Epping',
-    constraints: characterConstraints('GBC')
-  },
-  {
-    name: 'Dr. Pollan',
-    constraints: characterConstraints('ICF')
-  },
-  {
-    name: 'Speaker Lancing',
-    constraints: characterConstraints('HAE')
-  },
-  {
-    name: 'Secretary Moorland',
-    constraints: characterConstraints('HBE')
-  },
-  {
-    name: 'Ambassador Stepman',
-    constraints: characterConstraints('HCD')
-  },
-  {
-    name: 'Dr. Kalish',
-    constraints: characterConstraints('IEF')
-  },
-  {
-    name: 'Dr. Cruz',
-    constraints: characterConstraints('IAF')
-  },
-  {
-    name: 'Lieutenant Danbridge',
-    constraints: characterConstraints('GBE')
-  },
-  {
-    name: 'Director Sullivan',
-    constraints: characterConstraints('GEF')
-  },
-  {
-    name: 'Assistant Zuckerman',
-    constraints: characterConstraints('IAE')
-  }
-];
+function normalizeCode(code) {
+	return new CastingConstraints(code).code();
+}
+
+var CHARACTERS = {};
+
+function Character(name, code) {
+	this.name = name;
+	this.constraints = new CastingConstraints(code);
+	this.id = this.constraints.code();
+	CHARACTERS[this.id] = this;
+}
+
+new Character('General Rosen', 'GAB');
+new Character('Commander Garrity', 'GDF');
+new Character('Dr. Solan', 'IAB');
+new Character('President Carroll', 'HAC');
+new Character('Secretary Highmore', 'HBF');
+new Character('Dr. White', 'IBE');
+new Character('Undersecretary Bourne', 'HCE');
+new Character('Dr. Yu', 'IAD');
+new Character('Agent Bale', 'GCF');
+new Character('Secretary Stevenson', 'HEF');
+new Character('Vice President Richardson', 'HAD');
+new Character('Rev. LaMont', 'HBD');
+new Character('Dr. Raines', 'IBC');
+new Character('Dr. Calo', 'ICD');
+new Character('Major Hughes', 'GCE');
+new Character('Attache Byrne', 'GAC');
+new Character('General Markoff', 'GAE');
+new Character('Corporal Breckinridge', 'GDE');
+new Character('Representative Harlan', 'HDE');
+new Character('Senator Shields', 'HAF');
+new Character('Deputy Thatcher', 'HBC');
+new Character('Colonel Rothenberg', 'GCD');
+new Character('Advisor Cahill', 'GAF');
+new Character('Dr. Langdon', 'IDE');
+new Character('Dr. Roma', 'ICE');
+new Character('Dr. Hefetz', 'IDF');
+new Character('Assistant Carlisle', 'IAC');
+new Character('Dr. Elder', 'IBD');
+new Character('Major Roderick', 'GAD');
+new Character('Chief Obanhein', 'GBD');
+new Character('Secretary Stern', 'HAB');
+new Character('Secretary Gutierrez', 'HDF');
+new Character('Manager Edwards', 'IBF');
+new Character('Director Mercer', 'HCF');
+new Character('Special Agent Pelletier', 'GBF');
+new Character('Special Agent Epping', 'GBC');
+new Character('Dr. Pollan', 'ICF');
+new Character('Speaker Lancing', 'HAE');
+new Character('Secretary Moorland', 'HBE');
+new Character('Ambassador Stepman', 'HCD');
+new Character('Dr. Kalish', 'IEF');
+new Character('Dr. Cruz', 'IAF');
+new Character('Lieutenant Danbridge', 'GBE');
+new Character('Director Sullivan', 'GEF');
+new Character('Assistant Zuckerman', 'IAE');
 
 var players = [];
 
@@ -237,79 +144,115 @@ function playerSelections(player) {
 }
 
 function selectionsComplete(selections) {
-	return (selections.job && selections.traits.length == 3);
-}
-
-function characterMatches(character, selections) {
-	var constraints = character.constraints;
-	
-	if (constraints.job != selections.job) {
+	if (!selections.job)
 		return false;
-	}
-	
-	for (characterTraitIndex in constraints.traits) {
-		var characterTrait = constraints.traits[characterTraitIndex];
+
+	if (selections.traits.length != 3)
+		return false;
 		
-		var traitSelected = false;
-		for (selectedTraitIndex in selections.traits) {
-			var selectedTrait = selections.traits[selectedTraitIndex];
-			if (characterTrait == selectedTrait) {
-				traitSelected = true;
-				break;
-			}
-		}
+	if ($.unique(selections.traits).length < 2)
+		return false;
 		
-		if (!traitSelected) {
-			return false;
-		}
-	}
-	
 	return true;
 }
 
 function matchingCharacters(selections) {
-	var matches = [];
+	var codes = [
+	selections.job + selections.traits[0] + selections.traits[1],
+	selections.job + selections.traits[1] + selections.traits[2],
+	selections.job + selections.traits[0] + selections.traits[2]
+	];
 	
-	for (characterIndex in characters) {
-		var character = characters[characterIndex];
-		if (characterMatches(character, selections)) {
-			matches.push(character);
-		}
-	}
+	codes = $.map(codes, normalizeCode);
+	codes = $.unique(codes);
 	
+	var matches = $.map(codes, function(code) { return CHARACTERS[code] });
 	return matches;
 }
 
-function choiceSelected(event) {
-	var playerNumber = event.data;
+function refreshCastingOptionsCell(playerNumber) {
 	var player = players[playerNumber];
-	var selections = playerSelections(player);
-	
 	var optionsCell = player.castingOptionsCell;
 	optionsCell.html('');
+	
+	if (player.characterId)
+		return;
+	
+	var selections = playerSelections(player);	
 	if (selectionsComplete(selections)) {
 		var matches = matchingCharacters(selections);
 		
 		for (matchIndex in matches) {
 			var match = matches[matchIndex];
 			var button = $('<button>'+match.name+'</button>');
+			if (match.playerNumber != null) {
+				button.attr('disabled', 'disabled');
+			}
+			button.on('click', null, { playerNumber: playerNumber, characterId: match.id }, castButtonPressed);
 			button.appendTo(optionsCell);
 		}
 	}
+}
+
+function castButtonPressed(event) {
+	var player = players[event.data.playerNumber];
+	var character = CHARACTERS[event.data.characterId];
+	
+	player.characterId = character.id;
+	player.castingCell.html(character.name);
+	
+	player.row.find('select').attr('disabled', 'disabled');
+	
+	player.castingOptionsCell.html('');
+	
+	character.playerNumber = event.data.playerNumber;
+	
+	for (otherPlayer in players) {
+		if (otherPlayer == event.data.playerNumber)
+			continue;
+		
+		refreshCastingOptionsCell(otherPlayer);
+	}
+}
+
+function choiceSelected(event) {
+	refreshCastingOptionsCell(event.data);
+}
+
+function handleArrowKeys(event) {
+	if (event.keyCode != 38 && event.keyCode != 40 && event.keyCode != 13)
+		return true;
+		
+	var td = $(event.target).parent('td');
+	var tr = td.parent('tr');
+	var tdIndex = tr.children('td').index(td);
+
+	var newTr;
+	if (event.keyCode == 38) {
+		newTr = tr.prev('tr');
+	} else if (event.keyCode == 40 || event.keyCode == 13) {
+		newTr = tr.next('tr');
+	}
+	
+	var newTd = newTr.children('td:eq('+tdIndex+')');
+	newTd.children('input, select').focus();
 }
 
 $(function() {
 	var tbody = $('table tbody');
 	for (var playerNumber=0; playerNumber<15; playerNumber++) {
 		var choices = [];
-		var row = $('<tr></tr>');
+		var rowClass = ((playerNumber + 1) % 2 == 0) ? 'even' : 'odd';
+		var row = $('<tr class="'+rowClass+'"></tr>');
 		var playerName = $('<input type="text"></input>');
-		playerName.appendTo(row);
+		var playerNameCell = $('<td></td>');
+		playerName.appendTo(playerNameCell);
+		playerNameCell.appendTo(row);
 		
 		for (var choiceNumber=0; choiceNumber<3; choiceNumber++) {
 			var choice = $('<select><option selected></option></select>');
-			for (var traitLetter in traits) {
-				var option = $('<option value="'+traitLetter+'">'+traitLetter+': '+traits[traitLetter]+'</option>');
+			for (var traitLetter in TRAITS) {
+				var option = $('<option value="'+traitLetter+'">'+TRAITS[traitLetter]+' ('+traitLetter+')</option>');
 				option.appendTo(choice);
 			}
 			choice.on('change', null, playerNumber, choiceSelected);
@@ -322,8 +265,8 @@ $(function() {
 		}
 		
 		var jobSelect = $('<select><option selected></option></select>');
-		for (var jobLetter in jobs) {
-			var option = $('<option value="'+jobLetter+'">'+jobLetter+': '+jobs[jobLetter]+'</option>');
+		for (var jobLetter in JOBS) {
+			var option = $('<option value="'+jobLetter+'">'+JOBS[jobLetter]+' ('+jobLetter+')</option>');
 			option.appendTo(jobSelect);
 		}
 		jobSelect.on('change', null, playerNumber, choiceSelected);
@@ -344,10 +287,13 @@ $(function() {
 			jobSelect: jobSelect,
 			castingOptionsCell: castingOptionsCell,
 			castingCell: castingCell,
-			row: row
+			row: row,
+			characterId: null
 		};
 		
 		players[playerNumber] = player;
 		row.appendTo(tbody);
 	}
+	
+	tbody.find('input, select, option').keydown(handleArrowKeys);
 });
