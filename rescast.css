@@ -68,3 +68,10 @@ select {
 	-webkit-appearance: menulist-textfield;
 	border-radius: 0;
 }
+
+img.ae-logo {
+	float: right;
+	margin: 5px;
+	width: 114px;
+	height: 21px;
+}
