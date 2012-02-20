@@ -13,6 +13,27 @@ var JOBS = {
 	'I': 'Scientist'
 };
 
+// http://diveintohtml5.info/storage.html
+function browserSupportsStorage() {
+  try {
+    return 'localStorage' in window && window['localStorage'] !== null;
+  } catch (e) {
+    return false;
+  }
+}
+
+function setStorageStatus(status) {
+	if (!browserSupportsStorage()) {
+		setStorageError("Browser doesn't support HTML5 local storage.  Your casting will not be saved.");
+	} else {
+		$('.storage-status').removeClass('error').html(status);
+	}
+}
+
+function setStorageError(error) {
+	$('.storage-status').addClass('error').html(error);
+}
+
 function CastingConstraints(code) {
 	this.traits = [];
 	this.job = null;
@@ -123,44 +144,29 @@ new Character('Assistant Zuckerman', 'IAE');
 
 var players = [];
 
-function playerSelections(player) {
-	var traits = [];
-	for (choiceIndex in player.choices) {
-		var choice = player.choices[choiceIndex];
-		if (choice.val() != '') {
-			traits.push(choice.val());
-		}
-	}
-	
-	var job = null;
-	if (player.jobSelect.val() != '') {
-		job = player.jobSelect.val();
-	}
-	
-	return {
-		job: job,
-		traits: traits
-	};
+function Selections(job, traits) {
+	this.job = job;
+	this.traits = traits;
 }
 
-function selectionsComplete(selections) {
-	if (!selections.job)
+Selections.prototype.complete = function() {
+	if (!this.job)
 		return false;
 
-	if (selections.traits.length != 3)
+	if (this.traits.length != 3)
 		return false;
 		
-	if ($.unique(selections.traits).length < 2)
+	if ($.unique(this.traits).length < 2)
 		return false;
 		
 	return true;
 }
 
-function matchingCharacters(selections) {
+Selections.prototype.matchingCharacters = function() {
 	var codes = [
-	selections.job + selections.traits[0] + selections.traits[1],
-	selections.job + selections.traits[1] + selections.traits[2],
-	selections.job + selections.traits[0] + selections.traits[2]
+	this.job + this.traits[0] + this.traits[1],
+	this.job + this.traits[1] + this.traits[2],
+	this.job + this.traits[0] + this.traits[2]
 	];
 	
 	codes = $.map(codes, normalizeCode);
@@ -168,55 +174,6 @@ function matchingCharacters(selections) {
 	
 	var matches = $.map(codes, function(code) { return CHARACTERS[code] });
 	return matches;
-}
-
-function refreshCastingOptionsCell(playerNumber) {
-	var player = players[playerNumber];
-	var optionsCell = player.castingOptionsCell;
-	optionsCell.html('');
-	
-	if (player.characterId)
-		return;
-	
-	var selections = playerSelections(player);	
-	if (selectionsComplete(selections)) {
-		var matches = matchingCharacters(selections);
-		
-		for (matchIndex in matches) {
-			var match = matches[matchIndex];
-			var button = $('<button>'+match.name+'</button>');
-			if (match.playerNumber != null) {
-				button.attr('disabled', 'disabled');
-			}
-			button.on('click', null, { playerNumber: playerNumber, characterId: match.id }, castButtonPressed);
-			button.appendTo(optionsCell);
-		}
-	}
-}
-
-function castButtonPressed(event) {
-	var player = players[event.data.playerNumber];
-	var character = CHARACTERS[event.data.characterId];
-	
-	player.characterId = character.id;
-	player.castingCell.html(character.name);
-	
-	player.row.find('select').attr('disabled', 'disabled');
-	
-	player.castingOptionsCell.html('');
-	
-	character.playerNumber = event.data.playerNumber;
-	
-	for (otherPlayer in players) {
-		if (otherPlayer == event.data.playerNumber)
-			continue;
-		
-		refreshCastingOptionsCell(otherPlayer);
-	}
-}
-
-function choiceSelected(event) {
-	refreshCastingOptionsCell(event.data);
 }
 
 function handleArrowKeys(event) {
@@ -238,62 +195,231 @@ function handleArrowKeys(event) {
 	newTd.children('input, select').focus();
 }
 
-$(function() {
-	var tbody = $('table tbody');
-	for (var playerNumber=0; playerNumber<15; playerNumber++) {
-		var choices = [];
-		var rowClass = ((playerNumber + 1) % 2 == 0) ? 'even' : 'odd';
-		var row = $('<tr class="'+rowClass+'"></tr>');
-		var playerName = $('<input type="text"></input>');
-		var playerNameCell = $('<td></td>');
-		playerName.appendTo(playerNameCell);
-		playerNameCell.appendTo(row);
+function Player(row, playerNumber) {
+	this.row = row;
+	this.playerNumber = playerNumber;
+	this.choices = [];
+	
+	this.playerName = $('<input type="text"></input>');
+	this.playerNameCell = $('<td></td>');
+	this.playerName.appendTo(this.playerNameCell);
+	this.playerNameCell.appendTo(this.row);
+	this.playerName.on("change", null, this.playerNumber, function (event) { players[event.data].saveStateToStorage(); });
+	
+	var choiceSelected = function(event) {
+		players[event.data].refreshCastingOptionsCell();
+		players[event.data].saveStateToStorage();
+	};
+		
+	for (var choiceNumber=0; choiceNumber<3; choiceNumber++) {
+		var choice = $('<select><option selected></option></select>');
+		for (var traitLetter in TRAITS) {
+			var option = $('<option value="'+traitLetter+'">'+TRAITS[traitLetter]+' ('+traitLetter+')</option>');
+			option.appendTo(choice);
+		}
+		choice.on('change', null, this.playerNumber, choiceSelected);
+			
+		var cell = $('<td></td>');
+		choice.appendTo(cell);
+		this.choices.push(choice);
+			
+		cell.appendTo(this.row);
+	}
+		
+	this.jobSelect = $('<select><option selected></option></select>');
+	for (var jobLetter in JOBS) {
+		var option = $('<option value="'+jobLetter+'">'+JOBS[jobLetter]+' ('+jobLetter+')</option>');
+		option.appendTo(this.jobSelect);
+	}
+	this.jobSelect.on('change', null, this.playerNumber, choiceSelected);
+			
+	var jobCell = $('<td></td>');
+	this.jobSelect.appendTo(jobCell);		
+	jobCell.appendTo(this.row);		
+		
+	this.castingOptionsCell = $('<td></td>');
+	this.castingOptionsCell.appendTo(this.row);
+		
+	this.castingCell = $('<td></td>');
+	this.castingCell.appendTo(this.row);
+	
+	this.characterId = null;
+	
+	this.loadStateFromStorage();
+}
+
+Player.prototype.selections = function() {
+	var traits = [];
+	for (choiceIndex in this.choices) {
+		var choice = this.choices[choiceIndex];
+		if (choice.val() != '') {
+			traits.push(choice.val());
+		}
+	}
+	
+	var job = null;
+	if (this.jobSelect.val() != '') {
+		job = this.jobSelect.val();
+	}
+	
+	return new Selections(job, traits);
+}
+
+Player.prototype.refreshCastingCell = function() {
+	if (!this.characterId) {
+		this.castingCell.html("");
+		return;
+	}
+	
+	var character = CHARACTERS[this.characterId];	
+	this.castingCell.html(character.name + " ");
+	
+	var playerNumber = this.playerNumber;
+	
+	var undoLink = $('<a href="#">(undo)</a>');
+	undoLink.bind('click', function() {
+		if (confirm("Are you sure?")) {
+			players[playerNumber].uncast();
+		}
+	});
+	undoLink.appendTo(this.castingCell);
+}
+
+Player.prototype.refreshCastingOptionsCell = function() {
+	var optionsCell = this.castingOptionsCell;
+	optionsCell.html('');
+	
+	if (this.characterId)
+		return;
+	
+	var selections = this.selections();	
+	if (selections.complete()) {
+		var matches = selections.matchingCharacters();
+		
+		for (matchIndex in matches) {
+			var match = matches[matchIndex];
+			var button = $('<button>'+match.name+'</button>');
+			if (match.playerNumber != null) {
+				button.attr('disabled', 'disabled');
+			}
+			button.on('click', null, { playerNumber: this.playerNumber, characterId: match.id }, 
+				function(event) {
+					players[event.data.playerNumber].cast(event.data.characterId);
+				});
+			button.appendTo(optionsCell);
+		}
+	}
+}
+
+Player.prototype.cast = function(characterId) {
+	var character = CHARACTERS[characterId];
+	
+	this.characterId = character.id;
+	this.refreshCastingCell();
+	this.row.find('select').attr('disabled', 'disabled');
+	
+	this.castingOptionsCell.html('');
+	
+	character.playerNumber = this.playerNumber;
+	
+	for (otherPlayer in players) {
+		if (otherPlayer == this.playerNumber)
+			continue;
+		
+		players[otherPlayer].refreshCastingOptionsCell();
+	}
+	
+	this.saveStateToStorage();
+}
+
+Player.prototype.uncast = function() {
+	var character = CHARACTERS[this.characterId];
+	
+	this.characterId = null;
+	if (character) {
+		character.playerNumber = null;
+	}
+
+	this.row.find('select').removeAttr('disabled');
+	this.castingCell.html("");
+	
+	for (playerNumber in players) {
+		players[playerNumber].refreshCastingOptionsCell();
+	}
+	
+	this.saveStateToStorage();
+}
+
+Player.prototype.loadStateFromStorage = function() {
+	setStorageStatus("Loading player "+this.playerNumber+"...");
+	
+	if (browserSupportsStorage()) {
+		var storageKey = "rescast.players["+this.playerNumber+"].";
+		
+		this.playerName.val(localStorage[storageKey + "playerName"]);
 		
 		for (var choiceNumber=0; choiceNumber<3; choiceNumber++) {
-			var choice = $('<select><option selected></option></select>');
-			for (var traitLetter in TRAITS) {
-				var option = $('<option value="'+traitLetter+'">'+TRAITS[traitLetter]+' ('+traitLetter+')</option>');
-				option.appendTo(choice);
-			}
-			choice.on('change', null, playerNumber, choiceSelected);
+			var choiceValue = localStorage[storageKey + "choices["+choiceNumber+"]"];
+			var choice = this.choices[choiceNumber];
 			
-			var cell = $('<td></td>');
-			choice.appendTo(cell);
-			choices.push(choice);
-			
-			cell.appendTo(row);
+			choice.find('option[value='+choiceValue+']').attr('selected', 'selected');
 		}
 		
-		var jobSelect = $('<select><option selected></option></select>');
-		for (var jobLetter in JOBS) {
-			var option = $('<option value="'+jobLetter+'">'+JOBS[jobLetter]+' ('+jobLetter+')</option>');
-			option.appendTo(jobSelect);
+		var job = localStorage[storageKey + "job"];
+		this.jobSelect.find('option[value='+job+']').attr('selected', 'selected');
+		
+		this.characterId = localStorage[storageKey + "characterId"];
+		if (this.characterId) {
+			this.cast(this.characterId);
 		}
-		jobSelect.on('change', null, playerNumber, choiceSelected);
-			
-		var jobCell = $('<td></td>');
-		jobSelect.appendTo(jobCell);		
-		jobCell.appendTo(row);		
+	}
+}
+
+Player.prototype.saveStateToStorage = function() {
+	setStorageStatus("Saving player "+this.playerNumber+"...");
+	
+	if (browserSupportsStorage()) {
+		var storageKey = "rescast.players["+this.playerNumber+"].";
 		
-		var castingOptionsCell = $('<td></td>');
-		castingOptionsCell.appendTo(row);
+		localStorage[storageKey + "playerName"] = this.playerName.val();
 		
-		var castingCell = $('<td></td>');
-		castingCell.appendTo(row);
+		for (var choiceNumber=0; choiceNumber<3; choiceNumber++) {
+			var choice = this.choices[choiceNumber];
+			var choiceValue = choice.find('option:selected').val();
+			localStorage[storageKey + "choices["+choiceNumber+"]"] = choiceValue;
+		}
 		
-		var player = {
-			playerName: playerName,
-			choices: choices,
-			jobSelect: jobSelect,
-			castingOptionsCell: castingOptionsCell,
-			castingCell: castingCell,
-			row: row,
-			characterId: null
-		};
+		var job = this.jobSelect.find('option:selected').val();
+		localStorage[storageKey + "job"] = job;
 		
-		players[playerNumber] = player;
+		if (this.characterId) {
+			localStorage[storageKey + "characterId"] = this.characterId;
+		} else {
+			localStorage.removeItem(storageKey + "characterId");
+		}
+	}
+	
+	setStorageStatus("Ready.");
+}
+
+$(function() {
+	setStorageStatus("Initializing ResCast...");
+	
+	var tbody = $('table tbody');
+	for (var playerNumber=0; playerNumber<15; playerNumber++) {
+		
+		var rowClass = ((playerNumber + 1) % 2 == 0) ? 'even' : 'odd';
+		var row = $('<tr class="'+rowClass+'"></tr>');
+		
+		players[playerNumber] = new Player(row, playerNumber);		
 		row.appendTo(tbody);
 	}
+	
+	for (var playerNumber=0; playerNumber<15; playerNumber++) {
+		players[playerNumber].refreshCastingOptionsCell();
+	}
+	
+	setStorageStatus("Ready.");
 	
 	tbody.find('input, select, option').keydown(handleArrowKeys);
 });
