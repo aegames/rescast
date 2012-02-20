@@ -15,11 +15,11 @@ var JOBS = {
 
 // http://diveintohtml5.info/storage.html
 function browserSupportsStorage() {
-  try {
-    return 'localStorage' in window && window['localStorage'] !== null;
-  } catch (e) {
-    return false;
-  }
+	try {
+		return 'localStorage' in window && window['localStorage'] !== null;
+	} catch (e) {
+		return false;
+	}
 }
 
 function setStorageStatus(status) {
@@ -350,27 +350,49 @@ Player.prototype.uncast = function() {
 	this.saveStateToStorage();
 }
 
+Player.prototype.getState = function() {
+	var state = {};
+	
+	state.playerName = this.playerName.val();
+	
+	state.choices = [];
+	for (var choiceNumber=0; choiceNumber<3; choiceNumber++) {
+		var choice = this.choices[choiceNumber];
+		var choiceValue = choice.find('option:selected').val();
+		state.choices.push(choiceValue);
+	}
+	
+	state.job = this.jobSelect.val();
+	state.characterId = this.characterId;
+	
+	return state;
+}
+
+Player.prototype.setState = function(state) {
+	this.playerName.val(state.playerName);
+		
+	for (var choiceNumber=0; choiceNumber<3; choiceNumber++) {
+		var choiceValue = state.choices[choiceNumber];
+		var choice = this.choices[choiceNumber];
+			
+		choice.find('option[value='+choiceValue+']').attr('selected', 'selected');
+	}
+		
+	this.jobSelect.find('option[value='+state.job+']').attr('selected', 'selected');
+		
+	this.characterId = state.characterId;
+	if (this.characterId) {
+		this.cast(this.characterId);
+	}
+}
+
 Player.prototype.loadStateFromStorage = function() {
 	setStorageStatus("Loading player "+this.playerNumber+"...");
 	
 	if (browserSupportsStorage()) {
-		var storageKey = "rescast.players["+this.playerNumber+"].";
-		
-		this.playerName.val(localStorage[storageKey + "playerName"]);
-		
-		for (var choiceNumber=0; choiceNumber<3; choiceNumber++) {
-			var choiceValue = localStorage[storageKey + "choices["+choiceNumber+"]"];
-			var choice = this.choices[choiceNumber];
-			
-			choice.find('option[value='+choiceValue+']').attr('selected', 'selected');
-		}
-		
-		var job = localStorage[storageKey + "job"];
-		this.jobSelect.find('option[value='+job+']').attr('selected', 'selected');
-		
-		this.characterId = localStorage[storageKey + "characterId"];
-		if (this.characterId) {
-			this.cast(this.characterId);
+		var storageKey = "rescast.players["+this.playerNumber+"]";
+		if (localStorage[storageKey]) {
+			this.setState(JSON.parse(localStorage[storageKey]));
 		}
 	}
 }
@@ -379,27 +401,19 @@ Player.prototype.saveStateToStorage = function() {
 	setStorageStatus("Saving player "+this.playerNumber+"...");
 	
 	if (browserSupportsStorage()) {
-		var storageKey = "rescast.players["+this.playerNumber+"].";
-		
-		localStorage[storageKey + "playerName"] = this.playerName.val();
-		
-		for (var choiceNumber=0; choiceNumber<3; choiceNumber++) {
-			var choice = this.choices[choiceNumber];
-			var choiceValue = choice.find('option:selected').val();
-			localStorage[storageKey + "choices["+choiceNumber+"]"] = choiceValue;
-		}
-		
-		var job = this.jobSelect.find('option:selected').val();
-		localStorage[storageKey + "job"] = job;
-		
-		if (this.characterId) {
-			localStorage[storageKey + "characterId"] = this.characterId;
-		} else {
-			localStorage.removeItem(storageKey + "characterId");
-		}
+		var storageKey = "rescast.players["+this.playerNumber+"]";
+		localStorage[storageKey] = JSON.stringify(this.getState());
 	}
 	
 	setStorageStatus("Ready.");
+}
+
+function getAllPlayerStates() {
+	playerStates = {};
+	for (playerNumber in players) {
+		playerStates[playerNumber] = players[playerNumber].getState();
+	}
+	return playerStates;
 }
 
 $(function() {
