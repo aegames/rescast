@@ -89,39 +89,85 @@ function normalizeCode(code) {
 
 var CHARACTERS = {};
 
-function Character(name, code) {
+function Character(name, code, pairings) {
 	this.name = name;
 	this.constraints = new CastingConstraints(code);
 	this.id = this.constraints.code();
+	if (pairings != null) {
+		this.pairings = pairings;
+	} else {
+		this.pairings = [];
+	}
 	CHARACTERS[this.id] = this;
 }
 
+Character.prototype.matchingPlayers = function(excludes) {
+	var character = this;
+	if (excludes == null) {
+		excludes = [];
+	}
+	
+	return $.grep(players, function(player) {
+		if ($.inArray(player, excludes) != -1) {
+			return false;
+		}
+		
+		if (player.characterId != null) {
+			return (player.characterId == character.id);
+		} else {
+			return character.constraints.matches(player.selections());
+		}
+	});
+}
+
+Character.PairingStatus = {
+	POSSIBLE: 1,
+	NA: 0,
+	IMPOSSIBLE: -1
+};
+
+Character.prototype.pairingStatusForPlayer = function(player) {
+	if (this.pairings.length == 0) {
+		return Character.PairingStatus.NA;
+	}
+	
+	for (i in this.pairings) {
+		var pairing = this.pairings[i];
+		var character = CHARACTERS[pairing];
+		if (character.matchingPlayers([player]).length > 0 ) {
+			return Character.PairingStatus.POSSIBLE;
+		}
+	}
+	
+	return Character.PairingStatus.IMPOSSIBLE;
+}
+
 new Character('General Rosen', 'GAB');
-new Character('Commander Garrity', 'GDF');
-new Character('Dr. Solan', 'IAB');
-new Character('President Carroll', 'HAC');
+new Character('Commander Garrity', 'GDF', ['GDE']);
+new Character('Dr. Solan', 'IAB', ['IBC']);
+new Character('President Carroll', 'HAC', ['HAE', 'GCF']);
 new Character('Secretary Highmore', 'HBF');
-new Character('Dr. White', 'IBE');
+new Character('Dr. White', 'IBE', ['HAD']);
 new Character('Undersecretary Bourne', 'HCE');
-new Character('Dr. Yu', 'IAD');
-new Character('Agent Bale', 'GCF');
+new Character('Dr. Yu', 'IAD', ['IDE']);
+new Character('Agent Bale', 'GCF', ['HAC']);
 new Character('Secretary Stevenson', 'HEF');
-new Character('Vice President Richardson', 'HAD');
+new Character('Vice President Richardson', 'HAD', ['IBE']);
 new Character('Rev. LaMont', 'HBD');
-new Character('Dr. Raines', 'IBC');
-new Character('Dr. Calo', 'ICD');
+new Character('Dr. Raines', 'IBC', ['IAB', 'ICD']);
+new Character('Dr. Calo', 'ICD', ['IBC']);
 new Character('Major Hughes', 'GCE');
-new Character('Attache Byrne', 'GAC');
-new Character('General Markoff', 'GAE');
-new Character('Corporal Breckinridge', 'GDE');
+new Character('Attache Byrne', 'GAC', ['GAE']);
+new Character('General Markoff', 'GAE', ['GAC']);
+new Character('Corporal Breckinridge', 'GDE', ['GDF']);
 new Character('Representative Harlan', 'HDE');
 new Character('Senator Shields', 'HAF');
 new Character('Deputy Thatcher', 'HBC');
 new Character('Colonel Rothenberg', 'GCD');
 new Character('Advisor Cahill', 'GAF');
-new Character('Dr. Langdon', 'IDE');
-new Character('Dr. Roma', 'ICE');
-new Character('Dr. Hefetz', 'IDF');
+new Character('Dr. Langdon', 'IDE', ['IAD']);
+new Character('Dr. Roma', 'ICE', ['IDF']);
+new Character('Dr. Hefetz', 'IDF', ['ICE']);
 new Character('Assistant Carlisle', 'IAC');
 new Character('Dr. Elder', 'IBD');
 new Character('Major Roderick', 'GAD');
@@ -133,7 +179,7 @@ new Character('Director Mercer', 'HCF');
 new Character('Special Agent Pelletier', 'GBF');
 new Character('Special Agent Epping', 'GBC');
 new Character('Dr. Pollan', 'ICF');
-new Character('Speaker Lancing', 'HAE');
+new Character('Speaker Lancing', 'HAE', ['HAC']);
 new Character('Secretary Moorland', 'HBE');
 new Character('Ambassador Stepman', 'HCD');
 new Character('Dr. Kalish', 'IEF');
@@ -302,6 +348,14 @@ Player.prototype.refreshCastingOptionsCell = function() {
 			if (match.playerNumber != null) {
 				button.attr('disabled', 'disabled');
 			}
+			
+			var pairingStatus = match.pairingStatusForPlayer(this);
+			if (pairingStatus == Character.PairingStatus.POSSIBLE) {
+				button.addClass('recommended');
+			} else if (pairingStatus == Character.PairingStatus.IMPOSSIBLE) {
+				button.addClass('discouraged');
+			}
+			
 			button.on('click', null, { playerNumber: this.playerNumber, characterId: match.id }, 
 				function(event) {
 					players[event.data.playerNumber].cast(event.data.characterId);

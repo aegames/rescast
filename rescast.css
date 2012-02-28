@@ -76,6 +76,14 @@ img.ae-logo {
 	height: 21px;
 }
 
+button.recommended:enabled {
+	color: #060;
+}
+
+button.discouraged:enabled {
+	color: #600;
+}
+
 .storage-status {
 	float: left;
 	color: #666;
